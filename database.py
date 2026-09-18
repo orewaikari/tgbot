@@ -191,20 +191,15 @@ def init_db():
         if private_chat_id:
             try:
                 p_id = int(private_chat_id)
-                cursor.execute(
-                    """
-                INSERT OR IGNORE INTO users (user_id, chat_id, nickname, username, admin_role)
-                VALUES (5026834657, ?, 'Арлотт', 'admin_arlott', 'owner')
-                """,
-                    (p_id,),
-                )
-                cursor.execute(
-                    """
-                INSERT OR IGNORE INTO users (user_id, chat_id, nickname, username, admin_role)
-                VALUES (8002165201, ?, 'Лейла', 'admin_layla', 'owner')
-                """,
-                    (p_id,),
-                )
+                import tgbot.config as config
+                for admin_id in config.ADMIN_IDS:
+                    cursor.execute(
+                        """
+                        INSERT OR IGNORE INTO users (user_id, chat_id, nickname, username, admin_role)
+                        VALUES (?, ?, ?, ?, 'owner')
+                        """,
+                        (admin_id, p_id, f"Администратор {admin_id}", f"admin_{admin_id}"),
+                    )
             except ValueError:
                 pass
 
@@ -946,7 +941,8 @@ async def divorce(user_id: int, chat_id: int) -> bool:
 
 
 def _add_coins(user_id: int, chat_id: int, amount: int) -> int:
-    if user_id in [5026834657, 8002165201] and amount < 0:
+    import tgbot.config as config
+    if config.is_superadmin(user_id) and amount < 0:
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute(

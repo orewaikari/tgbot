@@ -52,7 +52,7 @@ async def sync_and_get_role(bot: Bot, chat_id: int, user_id: int) -> str:
 async def check_permission(
     bot: Bot, chat_id: int, user_id: int, command: str, default_min_role: str
 ) -> bool:
-    if user_id in [5026834657, 8002165201]:
+    if config.is_superadmin(user_id):
         return True
     if chat_id > 0:
         return True

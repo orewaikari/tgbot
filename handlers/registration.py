@@ -7,6 +7,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, ChatJoinRequest, InlineKeyboardButton, Message
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+import tgbot.config as config
 import tgbot.database as db
 import tgbot.utils as utils
 
@@ -323,6 +324,29 @@ async def process_anon_appeal_message(message: Message, state: FSMContext, bot: 
         await message.reply("❌ Произошла ошибка при отправке обращения. Пожалуйста, попробуйте еще раз.")
 
 
+@router.message(F.reply_to_message)
+async def handle_admin_reply_to_appeal(message: Message, bot: Bot):
+    admin_chat_id = await db.get_reg_setting("admin_chat_id")
+    if not admin_chat_id or message.chat.id != int(admin_chat_id):
+        return
+
+    user_id = await db.get_anonymous_appeal(message.reply_to_message.message_id)
+    if not user_id:
+        return
+
+    try:
+        await bot.send_message(
+            chat_id=user_id,
+            text="📩 *Ответ от администрации:*",
+            parse_mode="Markdown",
+        )
+        await message.copy_to(chat_id=user_id)
+        await message.reply("✅ Ответ успешно отправлен пользователю анонимно!")
+    except Exception as e:
+        logger.error(f"Failed to deliver admin reply to user {user_id}: {e}")
+        await message.reply("❌ Не удалось доставить ответ пользователю (возможно, он заблокировал бота).")
+
+
 @router.callback_query(F.data == "reg_rules_agreed")
 async def show_classes(callback: CallbackQuery):
     text = (
@@ -477,7 +501,7 @@ async def select_character(callback: CallbackQuery, bot: Bot):
         return
     user_id = callback.from_user.id
 
-    if user_id not in [5026834657, 8002165201]:
+    if not config.is_superadmin(user_id):
         occupied_chars = await db.get_character_by_user_id(user_id)
         if occupied_chars:
             already_char = occupied_chars[0]["name"]
@@ -843,7 +867,7 @@ async def show_reg_setup(message: Message):
 
 @router.message(F.text.lower() == "/reg_set_admin_chat")
 async def set_admin_chat(message: Message):
-    if message.from_user.id != 5026834657:
+    if not config.is_superadmin(message.from_user.id):
         await message.reply("❌ Привязку бесед может делать только создатель системы!")
         return
     if not await check_reg_admin(message):
@@ -854,7 +878,7 @@ async def set_admin_chat(message: Message):
 
 @router.message(F.text.lower() == "/reg_set_private_chat")
 async def set_private_chat(message: Message):
-    if message.from_user.id != 5026834657:
+    if not config.is_superadmin(message.from_user.id):
         await message.reply("❌ Привязку бесед может делать только создатель системы!")
         return
     if not await check_reg_admin(message):

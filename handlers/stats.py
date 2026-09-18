@@ -4,6 +4,7 @@ from datetime import datetime
 from aiogram import F, Router
 from aiogram.types import Message
 
+import tgbot.config as config
 import tgbot.database as db
 import tgbot.utils as utils
 
@@ -63,7 +64,7 @@ async def generate_profile_text(user_id: int, chat_id: int, bot) -> str:
         user_db = await db.get_user(user_id, chat_id)
 
     role = await utils.sync_and_get_role(bot, chat_id, user_id)
-    if user_id == 5026834657:
+    if config.is_superadmin(user_id):
         role_text = "⚙️ [Создатель системы]"
     else:
         role_titles = {
@@ -105,7 +106,7 @@ async def generate_profile_text(user_id: int, chat_id: int, bot) -> str:
     desc = user_db.get("description")
     desc_text = f"\n📝 *Инфоᴘмᴀция:* {escape_markdown(desc)}" if desc else ""
     coins_val = user_db.get("coins", 0) if user_db else 0
-    if user_id in [5026834657, 8002165201]:
+    if config.is_superadmin(user_id):
         coins_display = "∞"
     else:
         coins_display = str(coins_val)

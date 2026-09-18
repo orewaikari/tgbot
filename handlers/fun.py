@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from aiogram import F, Bot, Router
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
+import tgbot.config as config
 import tgbot.database as db
 import tgbot.utils as utils
 
@@ -109,7 +110,7 @@ async def show_wallet(message: Message):
     coins = user_db["coins"] if user_db and user_db["coins"] is not None else 0
     sugar = user_db["sugar"] if user_db and user_db["sugar"] is not None else 0
     tea = user_db["tea_count"] if user_db and user_db["tea_count"] is not None else 0
-    is_owner = user_id in [5026834657, 8002165201]
+    is_owner = config.is_superadmin(user_id)
     coins_display = "∞" if is_owner else str(coins)
     await message.reply(
         f"💳 *Кошелёк {nickname}:*\n\n"
@@ -192,7 +193,7 @@ async def buy_item(message: Message):
     user_db = await db.get_user(user_id, chat_id)
     coins = user_db["coins"] if user_db and user_db["coins"] is not None else 0
     nickname = user_db["nickname"] if user_db and user_db["nickname"] else message.from_user.full_name
-    is_owner = user_id in [5026834657, 8002165201]
+    is_owner = config.is_superadmin(user_id)
 
     if "чай" in text:
         price = 200
@@ -357,7 +358,7 @@ async def slots_game(message: Message):
     user_db = await db.get_user(user_id, chat_id)
     coins = user_db["coins"] if user_db and user_db["coins"] is not None else 0
     nickname = user_db["nickname"] if user_db and user_db["nickname"] else message.from_user.full_name
-    is_owner = user_id in [5026834657, 8002165201]
+    is_owner = config.is_superadmin(user_id)
 
     if not is_owner and coins < bet:
         await message.reply(f"❌ Недостаточно монет для ставки! У вас в кошельке всего {coins} монет.")
@@ -431,7 +432,7 @@ async def darts_game(message: Message):
     user_db = await db.get_user(user_id, chat_id)
     coins = user_db["coins"] if user_db and user_db["coins"] is not None else 0
     nickname = user_db["nickname"] if user_db and user_db["nickname"] else message.from_user.full_name
-    is_owner = user_id in [5026834657, 8002165201]
+    is_owner = config.is_superadmin(user_id)
 
     if not is_owner and coins < bet:
         await message.reply(f"❌ Недостаточно монет для ставки! У вас в кошельке всего {coins} монет.")
@@ -493,7 +494,7 @@ async def bowling_game(message: Message):
     user_db = await db.get_user(user_id, chat_id)
     coins = user_db["coins"] if user_db and user_db["coins"] is not None else 0
     nickname = user_db["nickname"] if user_db and user_db["nickname"] else message.from_user.full_name
-    is_owner = user_id in [5026834657, 8002165201]
+    is_owner = config.is_superadmin(user_id)
 
     if not is_owner and coins < bet:
         await message.reply(f"❌ Недостаточно монет для ставки! У вас в кошельке всего {coins} монет.")
@@ -979,7 +980,7 @@ async def parse_coins_command(message: Message, bot: Bot) -> tuple:
 @router.message(F.text.lower().startswith("выдать монеты") | F.text.lower().startswith("!выдать монеты") | F.text.lower().startswith("/выдать монеты"))
 async def give_coins_cmd(message: Message):
     user_id = message.from_user.id
-    if user_id not in [5026834657, 8002165201]:
+    if not config.is_superadmin(user_id):
         await message.reply("❌ Эта команда доступна только владельцам бота!")
         return
     target_id, target_name, amount = await parse_coins_command(message, message.bot)
@@ -990,7 +991,7 @@ async def give_coins_cmd(message: Message):
         await message.reply("❌ Укажите корректное количество монет для выдачи!")
         return
     new_bal = await db.add_coins(target_id, message.chat.id, amount)
-    tgt_bal_display = "∞" if target_id in [5026834657, 8002165201] else str(new_bal)
+    tgt_bal_display = "∞" if config.is_superadmin(target_id) else str(new_bal)
     await message.reply(
         f"🪙 Владелец начислил *{amount}* монет пользователю *{target_name}*!\n"
         f"💳 Новый баланс: *{tgt_bal_display}* монет.",
@@ -1001,7 +1002,7 @@ async def give_coins_cmd(message: Message):
 @router.message(F.text.lower().startswith("забрать монеты") | F.text.lower().startswith("!забрать монеты") | F.text.lower().startswith("/забрать монеты"))
 async def take_coins_cmd(message: Message):
     user_id = message.from_user.id
-    if user_id not in [5026834657, 8002165201]:
+    if not config.is_superadmin(user_id):
         await message.reply("❌ Эта команда доступна только владельцам бота!")
         return
     target_id, target_name, amount = await parse_coins_command(message, message.bot)
@@ -1017,7 +1018,7 @@ async def take_coins_cmd(message: Message):
     if amount > current_coins:
         amount = current_coins
     new_bal = await db.add_coins(target_id, message.chat.id, -amount)
-    tgt_bal_display = "∞" if target_id in [5026834657, 8002165201] else str(new_bal)
+    tgt_bal_display = "∞" if config.is_superadmin(target_id) else str(new_bal)
     await message.reply(
         f"🪙 Владелец забрал *{amount}* монет у пользователя *{target_name}*!\n"
         f"💳 Новый баланс: *{tgt_bal_display}* монет.",
