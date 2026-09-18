@@ -336,6 +336,9 @@ async def main():
 
     await bot.delete_webhook(drop_pending_updates=True)
 
+    from tgbot.userbot_sync import start_userbot, stop_userbot
+    await start_userbot()
+
     logger.info("Bot is successfully running! Polling starts now...")
     try:
         allowed_updates = dp.resolve_used_update_types()
@@ -343,6 +346,7 @@ async def main():
             allowed_updates.append("chat_member")
         await dp.start_polling(bot, allowed_updates=allowed_updates)
     finally:
+        await stop_userbot()
         await bot.session.close()
 
 

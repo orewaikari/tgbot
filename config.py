@@ -18,6 +18,10 @@ load_dotenv()
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
+API_ID = os.environ.get("API_ID", "")
+API_HASH = os.environ.get("API_HASH", "")
+USERBOT_SESSION = os.environ.get("USERBOT_SESSION", "")
+
 _raw_admins = os.environ.get("ADMIN_IDS", "")
 ADMIN_IDS = [int(p.strip()) for p in _raw_admins.split(",") if p.strip().isdigit()]
 

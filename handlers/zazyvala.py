@@ -109,6 +109,39 @@ async def manual_cleanup_users(message: Message):
     )
 
 
+@router.message(
+    F.text.lower().in_([
+        "!добор", "!автодобор", "добор", "автодобор", "/dobor", "/sync_members"
+    ])
+)
+async def manual_dobor_users(message: Message):
+    if message.chat.type not in ["group", "supergroup"]:
+        await message.reply("Этʏ комᴀндʏ можно использовᴀть только в гᴘʏппᴀх!")
+        return
+    allowed = await utils.check_permission(
+        message.bot, message.chat.id, message.from_user.id, "!добор", "administrator"
+    )
+    if not allowed:
+        await message.reply("❌ ʏ вᴀс нᴇт пᴘᴀв ᴀдминистᴘᴀтоᴘᴀ для зᴀпʏскᴀ ᴀвтодобоᴘᴀ ʏчᴀстников!")
+        return
+
+    msg = await message.reply("🔄 Зᴀпʏскᴀю ᴀвтодобоᴘ всᴇх ʏчᴀстников бᴇсᴇды чᴇᴘᴇз Userbot... Пожᴀлʏйстᴀ, подождитᴇ.")
+
+    from tgbot.userbot_sync import fetch_and_import_chat_members
+    count = await fetch_and_import_chat_members(message.chat.id)
+
+    if count > 0:
+        await msg.edit_text(
+            f"✅ Автодобор успешно завершен!\n\n📥 В базу данных добавлено новых участников: *{count}*",
+            parse_mode="Markdown",
+        )
+    else:
+        await msg.edit_text(
+            "ℹ️ Все участники беседы уже внесены в базу данных, либо Юзербот не настроен/не состоит в этой беседе.",
+            parse_mode="Markdown",
+        )
+
+
 @router.message(is_summon_all)
 async def summon_all(message: Message):
     if message.chat.type not in ["group", "supergroup"]:

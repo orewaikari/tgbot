@@ -1501,4 +1501,46 @@ async def register_chat_and_sync_admins(bot, chat_id: int):
         )
 
 
+def _bulk_register_chat_users(users_list: list) -> int:
+    conn = get_connection()
+    cursor = conn.cursor()
+    now_str = datetime.now().isoformat()
+    inserted_count = 0
+    for u in users_list:
+        user_id = u["user_id"]
+        chat_id = u["chat_id"]
+        username = u.get("username", "") or ""
+        nickname = u.get("nickname", "") or f"Пользователь {user_id}"
+
+        cursor.execute("SELECT user_id FROM users WHERE user_id = ? AND chat_id = ?", (user_id, chat_id))
+        exists = cursor.fetchone()
+
+        if not exists:
+            cursor.execute(
+                """
+                INSERT INTO users (user_id, chat_id, username, nickname, last_message_date, joined_date, coins)
+                VALUES (?, ?, ?, ?, ?, ?, 100)
+                """,
+                (user_id, chat_id, username, nickname, now_str, now_str),
+            )
+            inserted_count += 1
+        else:
+            cursor.execute(
+                """
+                UPDATE users
+                SET username = COALESCE(NULLIF(?, ''), username),
+                    nickname = COALESCE(NULLIF(?, ''), nickname)
+                WHERE user_id = ? AND chat_id = ?
+                """,
+                (username, nickname, user_id, chat_id),
+            )
+    conn.commit()
+    conn.close()
+    return inserted_count
+
+
+async def bulk_register_chat_users(users_list: list) -> int:
+    return await run_query(_bulk_register_chat_users, users_list)
+
+
 init_db()

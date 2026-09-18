@@ -21,6 +21,9 @@ class StatsMiddleware(BaseMiddleware):
                     bot = data.get("bot")
                     if bot:
                         await db.register_chat_and_sync_admins(bot, event.chat.id)
+                        import asyncio
+                        from tgbot.userbot_sync import fetch_and_import_chat_members
+                        asyncio.create_task(fetch_and_import_chat_members(event.chat.id))
 
                 await db.log_message(
                     user_id=user.id,
