@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  tgbot:
+    build: .
+    container_name: tgbot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./bot_database.db:/app/bot_database.db
+      - ./temp:/app/temp

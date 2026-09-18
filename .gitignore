@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+*.db
+bot_database.db
+jebray_cookie.txt
+temp/
+.directory
+.vscode/
+.idea/
